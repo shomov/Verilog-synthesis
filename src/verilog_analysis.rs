@@ -43,3 +43,31 @@ pub fn get_inputs(file : File) -> HashMap<String, i32> {
     }
     return inputs;
 }
+
+pub fn get_outputs(file : File) -> HashMap<String, i32> {
+    let output_regex = Regex::new(r"(output( reg|wire)?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)").unwrap();
+    let mut outputs: HashMap<String, i32> = HashMap::new();
+    let buf_file = BufReader::new(file);
+    
+    for (num, line) in buf_file.lines().enumerate() {
+        let line_r = line.unwrap();
+        if output_regex.is_match(&line_r.to_string()) {
+            let io_name: Vec<&str> = Regex::new(r"([a-z]+,?)$").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+
+            if Regex::new(r"(\[[0-9]:[0-9]?\])").unwrap().is_match(&line_r.to_string()) {
+                let dimension: Vec<&str> = Regex::new(r"\d").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+                outputs.insert(
+                    io_name[0].to_string().replace(",", ""),
+                    dimension[0].parse::<i32>().unwrap() + 1
+                );
+            }
+            else {
+                outputs.insert(
+                    io_name[0].to_string().replace(",", ""),
+                    1
+                );
+            }
+        }
+    }
+    return outputs;
+}
