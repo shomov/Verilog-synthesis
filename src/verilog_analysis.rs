@@ -1,10 +1,70 @@
 use std::fs::File;
+use same_file::Handle;
+use std::io::{Error};
+use std::path::{Path};
+use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader};
 
 
-pub fn get_module_name(line_r : &String) -> String {
+pub fn verilog_analysis(path : &Path) -> Result<(), Error> {
+    let path_to_read = Path::new(path);
+    Handle::stdout()?;
+    Handle::from_path(path_to_read)?;
+    let mut module_name : String;
+    let mut inputs: HashMap<String, i32> = HashMap::new();
+    let mut outputs: HashMap<String, i32> = HashMap::new();
+    let mut wires: HashMap<String, i32> = HashMap::new();
+    let mut regs: HashMap<String, i32> = HashMap::new();
+    let mut cont_assigns: HashMap<String, i32> = HashMap::new();
+    let mut always_assigns: HashMap<String, String> = HashMap::new();
+
+    
+    let file = File::open(&path_to_read)?;
+    let buf_file = BufReader::new(file);
+    for line in buf_file.lines() {
+        let mut token : Vec<String> = Vec::new();
+        let liner = line.unwrap();
+        token.push(liner);
+
+        let premodule_name = get_module_name(&token[0]);
+        if premodule_name != "".to_string() {
+            module_name = premodule_name;
+        }
+
+        let (input, dimension) = get_inputs(&token[0]);
+        if input != "".to_string() {
+            inputs.insert(input, dimension);
+        }
+
+        let (output, dimension) = get_outputs(&token[0]);
+        if output != "".to_string() {
+            outputs.insert(output, dimension);
+        }
+
+        let (wire, dimension) = get_wires(&token[0]);
+        if wire != "".to_string() {
+            wires.insert(wire, dimension);
+        }
+        
+        let (reg, dimension) = get_regs(&token[0]);
+        if reg != "".to_string() {
+            regs.insert(reg, dimension);
+        }
+
+        let (always_event, always_assign) = get_alwayses(&token[0]);
+        always_assigns.insert(always_event, always_assign);
+
+        let (pre_signals, pre_lut_cmd) = get_assign(&token[0]);
+        if pre_signals != ""{
+            cont_assigns.insert(pre_signals, pre_lut_cmd);
+        }
+    }
+    Ok(())
+
+}
+
+fn get_module_name(line_r : &String) -> String {
     if Regex::new(r"\s*module \w+\s*").unwrap().is_match(&line_r.to_string())  {
         let regex = Regex::new(r"(\w+)\($").unwrap();
         let module: Vec<&str> = regex.find_iter(&line_r).map(|x| x.as_str()).collect();
@@ -12,7 +72,7 @@ pub fn get_module_name(line_r : &String) -> String {
     }
     return "".to_string();
 }
-pub fn get_inputs(line_r : &String) -> (String, i32) {
+fn get_inputs(line_r : &String) -> (String, i32) {
     let input_regex = Regex::new(r"(input( reg|wire)?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)").unwrap();
     
     if input_regex.is_match(&line_r.to_string()) {
@@ -36,7 +96,7 @@ pub fn get_inputs(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-pub fn get_outputs(line_r : &String) -> (String, i32) {
+fn get_outputs(line_r : &String) -> (String, i32) {
     let output_regex = Regex::new(r"(output( reg|wire)?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)").unwrap();
     
     if output_regex.is_match(&line_r.to_string()) {
@@ -60,7 +120,7 @@ pub fn get_outputs(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-pub fn get_wires(line_r : &String) -> (String, i32) {
+fn get_wires(line_r : &String) -> (String, i32) {
     let wire_regex = Regex::new(r"^(wire?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)+;").unwrap();
     if wire_regex.is_match(&line_r.to_string()) {
         let wire_name: Vec<&str> = Regex::new(r"([a-z]+,?)$").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
@@ -83,7 +143,7 @@ pub fn get_wires(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-pub fn get_regs(line_r : &String) -> (String, i32) {
+fn get_regs(line_r : &String) -> (String, i32) {
     let reg_regex = Regex::new(r"^(reg?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)+;").unwrap();
     if reg_regex.is_match(&line_r.to_string()) {
         let reg_name: Vec<&str> = Regex::new(r"([a-z]+,?)$").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
@@ -106,7 +166,7 @@ pub fn get_regs(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-pub fn get_assign(line_r : &String) -> (String, i32) {
+fn get_assign(line_r : &String) -> (String, i32) {
     let assign_regex = Regex::new(r"^\s+(assign ((\w+ = \w+\s+[&|+-]+\s+\w+)|(\w+ [&|+-]+= \w+));\s?)").unwrap();
 
     if assign_regex.is_match(&line_r.to_string()) {
@@ -130,7 +190,7 @@ pub fn get_assign(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-pub fn get_alwayses(line_r : &String) -> (String, String) {
+fn get_alwayses(line_r : &String) -> (String, String) {
     let always_regex = Regex::new(r"^\s*(always(_ff)? @\((pos|neg)edge \w+\) begin\s*)").unwrap();
     let mut event : String = "".to_string();
     let mut always_detect:bool = false;
