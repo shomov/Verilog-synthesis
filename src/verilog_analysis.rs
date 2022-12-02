@@ -101,7 +101,7 @@ pub fn get_regs(file : File) -> HashMap<String, i32> {
 }
 
 pub fn get_assign(file : File) -> HashMap<String, i32> {
-    let assign_regex = Regex::new(r"^\s+(assign \w+ = \w+\s+[&|+-]\s+\w+;\s?)").unwrap();
+    let assign_regex = Regex::new(r"^\s+(assign ((\w+ = \w+\s+[&|+-]+\s+\w+)|(\w+ [&|+-]+= \w+));\s?)").unwrap();
     let mut cont_assignments: HashMap<String, i32> = HashMap::new();
     let buf_file = BufReader::new(file);
     
@@ -109,8 +109,10 @@ pub fn get_assign(file : File) -> HashMap<String, i32> {
         let line_r = line.unwrap();
         if assign_regex.is_match(&line_r.to_string()) {
             let signals: Vec<&str> = Regex::new(r"\w+ = \w+\s+[&|+-]\s+\w+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
-            let operation: Vec<&str> = Regex::new(r"[&|+-]").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+            let operation: Vec<&str> = Regex::new(r"[&|+-]+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
             let lut_cmd: i32 = match operation[0] {
+                "&&" => 6,
+                "||" => 5,
                 "&" => 4,
                 "|" => 3,
                 "+" => 2,
@@ -142,10 +144,12 @@ pub fn get_alwayses(file : File) -> HashMap<String, i32> {
             always_detect = false;
         }
         else if always_detect{
-            if Regex::new(r"^\s*(\w+ <?= \w+\s+[&|+-]\s+\w+;\s?)").unwrap().is_match(&line_r.to_string()) {
+            if Regex::new(r"^\s*((\w+ <?= \w+\s+[&|+-]+\s+\w+;\s?)|(\w+ [&|+-]+= \w+))").unwrap().is_match(&line_r.to_string()) {
                 let signals: Vec<&str> = Regex::new(r"\w+ <?= \w+\s+[&|+-]\s+\w+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
-                let operation: Vec<&str> = Regex::new(r"[&|+-]").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+                let operation: Vec<&str> = Regex::new(r"[&|+-]+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
                 let lut_cmd: i32 = match operation[0] {
+                    "&&" => 6,
+                    "||" => 5,
                     "&" => 4,
                     "|" => 3,
                     "+" => 2,
