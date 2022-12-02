@@ -25,12 +25,13 @@ module top(
         input wire rst,
         input [1:0] a,
         input [1:0] b,
+        input d,
+        input e,
+        output f,
         output reg [1:0] c
     );
     always_ff @(posedge clk) begin
-        if (rst)
-            c <= '0;
-        else
-            c <= a + b;
+        c <= a + b;
     end
+    assign f = e | d;
 endmodule
