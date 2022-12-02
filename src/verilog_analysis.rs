@@ -10,7 +10,7 @@ pub fn get_module_name(file : File) -> String {
         let line_r = line.unwrap();
         if line_r.contains("module") {
             let regex = Regex::new(r"\bmodule\s+(\w+)").unwrap();
-            let module: Vec<&str> = (regex.find_iter(&line_r).map(|x| x.as_str()).collect());
+            let module: Vec<&str> = regex.find_iter(&line_r).map(|x| x.as_str()).collect();
             return (module[0]).to_string();
         }
     }
@@ -100,4 +100,29 @@ pub fn get_regs(file : File) -> HashMap<String, i32> {
     return regs;
 }
 
+pub fn get_assign(file : File) -> HashMap<String, i32> {
+    let assign_regex = Regex::new(r"^\s+(assign \w+ = \w+\s+[&|+-]\s+\w+;\s?)").unwrap();
+    let mut assignments: HashMap<String, i32> = HashMap::new();
+    let buf_file = BufReader::new(file);
+    
+    for (num, line) in buf_file.lines().enumerate() {
+        let line_r = line.unwrap();
+        if assign_regex.is_match(&line_r.to_string()) {
+            let signals: Vec<&str> = Regex::new(r"\w+ = \w+\s+[&|+-]\s+\w+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+            let operation: Vec<&str> = Regex::new(r"[&|+-]").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+            let lut_cmd: i32 = match operation[0] {
+                "&" => 4,
+                "|" => 3,
+                "+" => 2,
+                "-" => 1,
+                _   => 0
+            };
+            assignments.insert(
+                signals[0].to_string(),
+                lut_cmd
+            );
+        }
+    }
+    return assignments;
+}
 
