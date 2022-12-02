@@ -6,62 +6,84 @@ use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
 
+pub struct AnalysisData {
+    pub module_name : Vec<String>, 
+    pub inputs : HashMap<String, i32>,
+    pub outputs : HashMap<String, i32>,
+    pub wires : HashMap<String, i32>,
+    pub regs : HashMap<String, i32>,
+    pub cont_assigns : HashMap<String, i32>,
+    pub always_assigns : HashMap<String, String>
+}
 
-pub fn verilog_analysis(path : &Path) -> Result<(), Error> {
+pub fn verilog_analysis(path : &Path) -> AnalysisData {
     let path_to_read = Path::new(path);
-    Handle::stdout()?;
-    Handle::from_path(path_to_read)?;
-    let mut module_name : String;
-    let mut inputs: HashMap<String, i32> = HashMap::new();
-    let mut outputs: HashMap<String, i32> = HashMap::new();
-    let mut wires: HashMap<String, i32> = HashMap::new();
-    let mut regs: HashMap<String, i32> = HashMap::new();
-    let mut cont_assigns: HashMap<String, i32> = HashMap::new();
-    let mut always_assigns: HashMap<String, String> = HashMap::new();
+    Handle::stdout().unwrap();
+    Handle::from_path(path_to_read).unwrap();
 
-    
-    let file = File::open(&path_to_read)?;
+    let mut data = AnalysisData {
+        module_name : Vec::new(),
+        inputs : HashMap::new(),
+        outputs : HashMap::new(),
+        wires : HashMap::new(),
+        regs : HashMap::new(),
+        cont_assigns : HashMap::new(),
+        always_assigns : HashMap::new()        
+    };
+
+    let file = File::open(&path_to_read).unwrap();
     let buf_file = BufReader::new(file);
     for line in buf_file.lines() {
         let mut token : Vec<String> = Vec::new();
         let liner = line.unwrap();
         token.push(liner);
 
+        // data.module_name = Vec::new();
         let premodule_name = get_module_name(&token[0]);
         if premodule_name != "".to_string() {
-            module_name = premodule_name;
+            data.module_name.push(premodule_name);
         }
 
         let (input, dimension) = get_inputs(&token[0]);
         if input != "".to_string() {
-            inputs.insert(input, dimension);
+            data.inputs.insert(input, dimension);
         }
 
         let (output, dimension) = get_outputs(&token[0]);
         if output != "".to_string() {
-            outputs.insert(output, dimension);
+            data.outputs.insert(output, dimension);
         }
 
         let (wire, dimension) = get_wires(&token[0]);
         if wire != "".to_string() {
-            wires.insert(wire, dimension);
+            data.wires.insert(wire, dimension);
         }
         
         let (reg, dimension) = get_regs(&token[0]);
         if reg != "".to_string() {
-            regs.insert(reg, dimension);
+            data.regs.insert(reg, dimension);
         }
 
         let (always_event, always_assign) = get_alwayses(&token[0]);
-        always_assigns.insert(always_event, always_assign);
+        data.always_assigns.insert(always_event, always_assign);
 
         let (pre_signals, pre_lut_cmd) = get_assign(&token[0]);
         if pre_signals != ""{
-            cont_assigns.insert(pre_signals, pre_lut_cmd);
+            data.cont_assigns.insert(pre_signals, pre_lut_cmd);
         }
     }
-    Ok(())
 
+    // verilog_synthesis::synthesis(
+    //     module_name,
+    //     inputs,
+    //     outputs,
+    //     wires,
+    //     regs,
+    //     cont_assigns,
+    //     always_assigns
+    // );
+
+    return data;
 }
 
 fn get_module_name(line_r : &String) -> String {
