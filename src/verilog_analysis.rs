@@ -1,7 +1,6 @@
 use std::fs::File;
 use same_file::Handle;
-use std::io::{Error};
-use std::path::{Path};
+use std::path::Path;
 use std::io::{BufRead, BufReader};
 use regex::Regex;
 use std::collections::HashMap;
@@ -73,16 +72,6 @@ pub fn verilog_analysis(path : &Path) -> AnalysisData {
         }
     }
 
-    // verilog_synthesis::synthesis(
-    //     module_name,
-    //     inputs,
-    //     outputs,
-    //     wires,
-    //     regs,
-    //     cont_assigns,
-    //     always_assigns
-    // );
-
     return data;
 }
 
@@ -95,7 +84,7 @@ fn get_module_name(line_r : &String) -> String {
     return "".to_string();
 }
 fn get_inputs(line_r : &String) -> (String, i32) {
-    let input_regex = Regex::new(r"(input( reg|wire)?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)").unwrap();
+    let input_regex = Regex::new(r"(input( (reg|wire))?\s+(\[[0-9]:[0-9]?\])?\s*(\w+),?)").unwrap();
     
     if input_regex.is_match(&line_r.to_string()) {
         let io_name: Vec<&str> = Regex::new(r"([a-z]+,?)$").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
