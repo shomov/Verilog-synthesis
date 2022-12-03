@@ -18,11 +18,11 @@ pub fn synthesis(data : AnalysisData) -> Builder {
 fn set_header(mut out_file : Builder) -> Builder {
     let now = Utc::now();
     out_file.append(    
-        "Garipova & Shomov Verilog HDL synthesis tool\n\r"
+        "//Garipova & Shomov Verilog HDL synthesis tool\n"
     );
     out_file.append(    
         format!(
-            "Synthesis Time UTC {:02}:{:02}:{:02}\n\r",
+            "//Synthesis Time UTC {:02}:{:02}:{:02}\n",
             now.hour(),
             now.minute(),
             now.second()
@@ -33,10 +33,10 @@ fn set_header(mut out_file : Builder) -> Builder {
 
 fn set_module_name(mut out_file : Builder, module_name : Vec<String>) -> Builder {
     out_file.append(
-        "`timescale 1 ps / 1 ps\n\r\n\r"
+        "`timescale 1 ps / 1 ps\n\n"
     );
     out_file.append(
-        "(* STRUCTURAL_NETLIST = \"yes\" *)\n\r"
+        "(* STRUCTURAL_NETLIST = \"yes\" *)\n"
     );
     out_file.append(
         format!(
@@ -47,22 +47,22 @@ fn set_module_name(mut out_file : Builder, module_name : Vec<String>) -> Builder
 }
 
 fn set_io(mut out_file : Builder, inputs : HashMap<String, i32>, outputs : HashMap<String, i32>) -> Builder {
-    out_file.append("(\n\r");
+    out_file.append("(\n");
     for (port, _) in &inputs {
         out_file.append(
-            format!("{},\n\r", port)
+            format!("{},\n", port)
         );
     }
     let mut i = 0;
     for (port, _) in &outputs {
         if i != outputs.len()-1 {
             out_file.append(
-                format!("{},\n\r", port)
+                format!("{},\n", port)
             );
         }
         else {
             out_file.append(
-                format!("{}\n\r);\n\r", port)
+                format!("{}\n);\n", port)
             );
         }
         i += 1;
@@ -70,24 +70,24 @@ fn set_io(mut out_file : Builder, inputs : HashMap<String, i32>, outputs : HashM
     for (port, dimension) in &inputs {
         if *dimension == 1{
             out_file.append(
-                format!("input {};\n\r", port)
+                format!("input {};\n", port)
             );
         }
         else {
             out_file.append(
-                format!("input [{dim}:0] {port};\n\r", dim = *dimension-1, port = port)
+                format!("input [{dim}:0] {port};\n", dim = *dimension-1, port = port)
             );
         }  
     }
     for (port, dimension) in &outputs {
         if *dimension == 1{
             out_file.append(
-                format!("output {};\n\r", port)
+                format!("output {};\n", port)
             );
         }
         else {
             out_file.append(
-                format!("output [{dim}:0] {port};\n\r", dim = *dimension-1, port = port)
+                format!("output [{dim}:0] {port};\n", dim = *dimension-1, port = port)
             );
         }
     }
@@ -95,56 +95,56 @@ fn set_io(mut out_file : Builder, inputs : HashMap<String, i32>, outputs : HashM
 }
 
 fn set_wires(mut out_file : Builder, inputs : HashMap<String, i32>, outputs : HashMap<String, i32>) -> Builder {
-    out_file.append("wire \\<const1> ;\n\r");
+    out_file.append("wire \\<const1> ;\n");
     for (port, dimension) in &inputs {
         if *dimension == 1{
             out_file.append(
-                format!("wire {};\n\r", port)
+                format!("wire {};\n", port)
             );
             out_file.append(
-                format!("wire {}_IBUF;\n\r", port)
+                format!("wire {}_IBUF;\n", port)
             );
         }
         else {
             out_file.append(
-                format!("wire [{dim}:0] {port};\n\r", dim = *dimension-1, port = port)
+                format!("wire [{dim}:0] {port};\n", dim = *dimension-1, port = port)
             );
             out_file.append(
-                format!("wire [{dim}:0] {port}_IBUF;\n\r", dim = *dimension-1, port = port)
+                format!("wire [{dim}:0] {port}_IBUF;\n", dim = *dimension-1, port = port)
             );
         }   
     }
     for (port, dimension) in &outputs {
         if *dimension == 1{
             out_file.append(
-                format!("wire {};\n\r", port)
+                format!("wire {};\n", port)
             );
             out_file.append(
-                format!("wire {}_OBUF;\n\r", port)
+                format!("wire {}_OBUF;\n", port)
             );
         }
         else {
             out_file.append(
-                format!("wire [{dim}:0] {port};\n\r", dim = *dimension-1, port = port)
+                format!("wire [{dim}:0] {port};\n", dim = *dimension-1, port = port)
             );
             out_file.append(
-                format!("wire [{dim}:0] {port}_OBUF;\n\r", dim = *dimension-1, port = port)
+                format!("wire [{dim}:0] {port}_OBUF;\n", dim = *dimension-1, port = port)
             );
         }   
     }
 
     
-    out_file.append("VCC VCC\n\r\t(.P(\\<const1> ));\n\r");
+    out_file.append("VCC VCC\n\t(.P(\\<const1> ));\n");
     for (port, dimension) in &inputs {
         if *dimension == 1{
             out_file.append(
-                format!("IBUF \\{port}_IBUF_inst \n\r\t(.I({port}), \n\r\t.O({port}_IBUF));\n\r", port=port)
+                format!("IBUF \\{port}_IBUF_inst \n\t(.I({port}), \n\t.O({port}_IBUF));\n", port=port)
             );
         }
         else {
             for i in 0..*dimension {
                 out_file.append(
-                    format!("IBUF \\{port}_IBUF[0]_inst \n\r\t(.I({port}[{dim}]), \n\r\t.O({port}_IBUF[{dim}]));\n\r", port=port, dim=i)
+                    format!("IBUF \\{port}_IBUF[0]_inst \n\t(.I({port}[{dim}]), \n\t.O({port}_IBUF[{dim}]));\n", port=port, dim=i)
                 );
             }
         }  
@@ -152,13 +152,13 @@ fn set_wires(mut out_file : Builder, inputs : HashMap<String, i32>, outputs : Ha
     for (port, dimension) in &outputs {
         if *dimension == 1{
             out_file.append(
-                format!("OBUF \\{port}_OBUF_inst \n\r\t(.I({port}), \n\r\t.O({port}_OBUF));\n\r", port=port)
+                format!("OBUF \\{port}_OBUF_inst \n\t(.I({port}), \n\t.O({port}_OBUF));\n", port=port)
             );
         }
         else {
             for i in 0..*dimension {
                 out_file.append(
-                    format!("OBUF \\{port}_OBUF[0]_inst \n\r\t(.I({port}[{dim}]), \n\r\t.O({port}_OBUF[{dim}]));\n\r", port=port, dim=i)
+                    format!("OBUF \\{port}_OBUF[0]_inst \n\t(.I({port}[{dim}]), \n\t.O({port}_OBUF[{dim}]));\n", port=port, dim=i)
                 );
             }
         } 
@@ -200,7 +200,7 @@ fn set_alwayses(
                 let max_dim = signal.values().max().unwrap();
                 for x in (0..*max_dim).step_by(2) {
                     out_file.append(
-                        format!("wire [{dim}:0]p_{cnt}_in;\n\r", dim = max_dim, cnt = alw_cnt)
+                        format!("wire [{dim}:0]p_{cnt}_in;\n", dim = max_dim, cnt = alw_cnt)
                     );
                     out_file.append(
                         format!("LUT2 #(
@@ -217,7 +217,7 @@ LUT4 #(
 \t.I1({in2}_IBUF[{curr}]),
 \t.I2({in2}_IBUF[{currinc}]),
 \t.I3({in1}_IBUF[{currinc}]),
-\t.O(p_{cnt}_in[{currinc}]));\n\r", out = signals[0], in1 = signals[1], in2 = signals[2], curr = x, currinc = x+1, cnt = alw_cnt, lut_cmd = lut_cmd)
+\t.O(p_{cnt}_in[{currinc}]));\n", out = signals[0], in1 = signals[1], in2 = signals[2], curr = x, currinc = x+1, cnt = alw_cnt, lut_cmd = lut_cmd)
                     )
                 }
             }
@@ -225,7 +225,7 @@ LUT4 #(
                 let max_dim = signal.values().max().unwrap();
                 for x in (0..*max_dim).step_by(2) {
                     out_file.append(
-                        format!("wire [{dim}:0]p_{cnt}_in;\n\r", dim = max_dim, cnt = alw_cnt)
+                        format!("wire [{dim}:0]p_{cnt}_in;\n", dim = max_dim, cnt = alw_cnt)
                     );
                     out_file.append(
                         format!("
@@ -236,7 +236,7 @@ LUT4 #(
 \t.I1({in2}_IBUF[{curr}]),
 \t.I2({in2}_IBUF[{currinc}]),
 \t.I3({in1}_IBUF[{currinc}]),
-\t.O(p_{cnt}_in[{currinc}]));\n\r", out = signals[0], in1 = signals[1], in2 = signals[2], curr = x, currinc = x+1, cnt = alw_cnt, lut_cmd = lut_cmd)
+\t.O(p_{cnt}_in[{currinc}]));\n", out = signals[0], in1 = signals[1], in2 = signals[2], curr = x, currinc = x+1, cnt = alw_cnt, lut_cmd = lut_cmd)
                     )
                 }
                 

@@ -17,3 +17,4 @@ Cargo.lock
 .vscode
 
 verilog/syn_test.v
+work/*/*
