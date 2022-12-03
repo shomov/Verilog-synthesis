@@ -32,12 +32,14 @@ pub fn verilog_analysis(path : &Path) -> AnalysisData {
 
     let file = File::open(&path_to_read).unwrap();
     let buf_file = BufReader::new(file);
+    let mut always_stage : i8 = 0;
+    let mut event : Vec<String>  = Vec::new();
+    event.push("".to_string());
+
     for line in buf_file.lines() {
         let mut token : Vec<String> = Vec::new();
-        let liner = line.unwrap();
-        token.push(liner);
+        token.push(line.unwrap());
 
-        // data.module_name = Vec::new();
         let premodule_name = get_module_name(&token[0]);
         if premodule_name != "".to_string() {
             data.module_name.push(premodule_name);
@@ -62,9 +64,16 @@ pub fn verilog_analysis(path : &Path) -> AnalysisData {
         if reg != "".to_string() {
             data.regs.insert(reg, dimension);
         }
-
-        let (always_event, always_assign) = get_alwayses(&token[0]);
-        data.always_assigns.insert(always_event, always_assign);
+        let always_assign : String;
+        let always_event : String;
+        
+        (always_assign, always_event, always_stage) = get_alwayses(&token[0], &event[0], always_stage);
+        if always_assign != ""{
+            data.always_assigns.insert(always_assign, always_event);
+        }
+        else if always_event != ""{
+            event[0] = always_event;
+        }
 
         let (pre_signals, pre_lut_cmd) = get_assign(&token[0]);
         if pre_signals != ""{
@@ -201,27 +210,26 @@ fn get_assign(line_r : &String) -> (String, i32) {
     return ("".to_string(), 0);
 }
 
-fn get_alwayses(line_r : &String) -> (String, String) {
+fn get_alwayses(line_r : &String, event : &String, stage : i8) -> (String, String, i8) {
     let always_regex = Regex::new(r"^\s*(always(_ff)? @\((pos|neg)edge \w+\) begin\s*)").unwrap();
-    let mut event : String = "".to_string();
-    let mut always_detect:bool = false;
 
-    if !always_detect && always_regex.is_match(&line_r.to_string()) {
-        event = Regex::new(r"edge\s+(\w+)\s*").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
-        always_detect = true;
+    if stage == 0 && always_regex.is_match(&line_r.to_string()) {
+        let new_event : String = Regex::new(r"edge\s+(\w+)\s*").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
+        return ("".to_string(), new_event.replace("edge ", ""), 1);
     }
-    else if always_detect && Regex::new(r"^\s*end\s*").unwrap().is_match(&line_r.to_string()){
-        always_detect = false;
+    else if stage == 1 && Regex::new(r"^\s*end\s*").unwrap().is_match(&line_r.to_string()){
+        return ("".to_string(), event.to_string(), 0);
     }
-    else if always_detect{
+    else if stage == 1{
         if Regex::new(r"^\s*((\w+ <?= \w+\s+[&|+-]+\s+\w+;\s?)|(\w+ [&|+-]+= \w+))").unwrap().is_match(&line_r.to_string()) {
             let signals: Vec<&str> = Regex::new(r"\w+ <?= \w+\s+[&|+-]\s+\w+").unwrap().find_iter(&line_r).map(|x| x.as_str()).collect();
             return (
-                event.replace("edge", ""),
                 signals[0].to_string(),
+                event.to_string(),
+                1
             );
         
         }
     }
-    return ("".to_string(), "".to_string());
+    return ("".to_string(), event.to_string(), stage);
 }

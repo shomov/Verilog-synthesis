@@ -10,11 +10,12 @@ fn main() -> Result<(), Error> {
     // let path_to_read = Path::new("verilog/top.sv");
     let date : AnalysisData;
     date = verilog_analysis::verilog_analysis(Path::new("verilog/top.sv"));
-    verilog_synthesis::synthesis(date);
+    let out_file = verilog_synthesis::synthesis(date);
 
     
-    let mut out_file = Builder::default();
-    // print!("{}", out_file.string());
+   
+
+    print!("{}", out_file.string().unwrap());
 
     // out_file.append("abc");
     // out_file.append("def");
