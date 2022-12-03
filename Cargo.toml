@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 same-file = "1"
 regex = "1"
+string-builder = "0.2.0"
+chrono = "0.4.23"
