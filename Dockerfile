@@ -1,10 +1,12 @@
-FROM rust:1.65.0
-LABEL maintainer1="m@shomov.spb.ru"
-LABEL maintainer2="garipova.gz@mail.ru"
-
-EXPOSE 8080
-COPY ./ ./
+FROM rust:latest as build
+ 
+RUN mkdir /rust-build
+COPY ./ /rust-build
+WORKDIR /rust-build
 RUN cargo build --release
-
-FROM rust:1.65-slim
-CMD ["./target/release/verilog_synthesis"]
+ 
+FROM alt:latest
+EXPOSE 8080:8080
+RUN mkdir /app
+COPY --from=build /rust-build/target/release/verilog_synthesis /app
+CMD ["/app/verilog_synthesis"]
