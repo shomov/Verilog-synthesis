@@ -3,6 +3,7 @@ use std::fs::File;
 use std::path::Path;
 mod verilog_analysis;
 mod verilog_synthesis;
+mod test;
 use bytes::BufMut;
 use string_builder::Builder;
 use futures::TryStreamExt;
