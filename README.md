@@ -1,5 +1,7 @@
 Редакция 1.0-0-preview от 06.11.2022
 
+[![Rust](https://github.com/shomov/Verilog-synthesis/actions/workflows/rust.yml/badge.svg?branch=develop)](https://github.com/shomov/Verilog-synthesis/actions/workflows/rust.yml)
+
 # [RUS|EN] Синтез Verilog HDL | Verilog HDL synthesis
 
 ## [RUS] Синтез Verilog HDL
