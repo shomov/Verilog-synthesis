@@ -1,4 +1,4 @@
-Редакция 1.0-0-preview от 06.11.2022
+Редакция 1.0-0
 
 # [RUS|EN] Синтез Verilog HDL | Verilog HDL synthesis
 
